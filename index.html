@@ -2,158 +2,108 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Packing System | Pro v2.0</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Warehouse Pro | Dark Mode Edition</title>
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <style>
-        /* --- Responsive CSS Base --- */
-        :root {
-            --primary: #1a73e8;
-            --success: #28a745;
-            --danger: #dc3545;
-            --bg: #f8f9fa;
+        :root { 
+            --primary: #1a73e8; --success: #2e7d32; --danger: #d32f2f; 
+            --bg: #f5f7f8; --card-bg: #ffffff; --text: #333; --label: #888;
         }
 
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; padding: 10px; color: #333; }
+        /* Dark Mode Variables */
+        body.dark-mode { 
+            --bg: #121212; --card-bg: #1e1e1e; --text: #e0e0e0; --label: #aaa;
+        }
+
+        body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); margin: 0; padding: 10px; transition: 0.3s; color: var(--text); }
+        .container { max-width: 800px; margin: 0 auto; }
         
-        .container { 
-            max-width: 1200px; 
-            margin: 0 auto; 
-            background: #fff; 
-            padding: 20px; 
-            border-radius: 12px; 
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08); 
-        }
-
-        h1 { text-align: center; color: var(--primary); font-size: 1.8rem; margin-bottom: 20px; }
-
-        /* Stats Bar Responsive Grid */
-        .stats-bar { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); 
-            gap: 10px; 
-            margin-bottom: 20px; 
-            text-align: center;
-        }
+        .header-section { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        h1 { color: var(--primary); font-size: 1.3rem; margin: 0; }
         
-        .stat-item { 
-            background: #fff; 
-            padding: 15px; 
-            border: 1px solid #eee; 
-            border-radius: 8px; 
-            font-weight: bold; 
-            font-size: 0.9rem;
-        }
+        /* Dark Mode Toggle Button */
+        .theme-btn { background: var(--card-bg); border: 1px solid #ddd; padding: 8px 12px; border-radius: 20px; cursor: pointer; font-size: 0.8rem; font-weight: bold; color: var(--text); box-shadow: 0 2px 5px rgba(0,0,0,0.1); outline: none; }
 
-        /* Upload Section */
-        .upload-section { 
-            padding: 20px; 
-            border: 2px dashed var(--primary); 
-            border-radius: 10px; 
-            background: #fdfdfd; 
-            text-align: center; 
-            margin-bottom: 20px;
-        }
-
-        .custom-file-label { 
-            background: var(--primary); 
-            color: white; 
-            padding: 10px 20px; 
-            border-radius: 5px; 
-            cursor: pointer; 
-            display: inline-block;
-        }
+        .control-box { background: var(--card-bg); border: 2px dashed var(--primary); padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 15px; transition: 0.3s; }
+        .btn-group { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 10px; }
+        
+        .file-label { background: var(--primary); color: white; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.85rem; }
+        .btn-clear { background: #666; color: white; border: none; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.85rem; }
         #fileInput { display: none; }
 
-        /* --- Table Responsive Magic --- */
-        .table-container { width: 100%; overflow-x: auto; }
-        
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        
-        th { background: #f1f3f4; color: #5f6368; padding: 12px; text-align: left; font-size: 0.8rem; }
-        
-        td { padding: 12px; border-bottom: 1px solid #eee; font-size: 0.9rem; }
+        .search-box { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 15px; box-sizing: border-box; font-size: 1rem; background: var(--card-bg); color: var(--text); outline: none; }
 
-        .check-col { text-align: center; width: 60px; }
-        input[type="checkbox"] { width: 20px; height: 20px; cursor: pointer; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 15px; }
+        .stat-card { background: var(--card-bg); padding: 10px; border-radius: 10px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: 0.3s; }
+        .stat-card div:first-child { font-size: 0.7rem; color: var(--label); font-weight: bold; }
+        .stat-card div:last-child { font-size: 1.1rem; font-weight: 900; }
 
-        /* --- Mobile Styles (Stacking columns) --- */
-        @media screen and (max-width: 600px) {
-            h1 { font-size: 1.4rem; }
-            
-            table, thead, tbody, th, td, tr { display: block; }
-            
-            thead tr { position: absolute; top: -9999px; left: -9999px; }
-            
-            tr { border: 1px solid #ddd; border-radius: 8px; margin-bottom: 15px; padding: 10px; background: #fff; }
-            
-            td { border: none; position: relative; padding-left: 50%; text-align: right; border-bottom: 1px solid #f9f9f9; }
-            
-            td:before { 
-                position: absolute; left: 10px; width: 45%; padding-right: 10px; 
-                white-space: nowrap; content: attr(data-label); 
-                font-weight: bold; text-align: left; color: var(--primary);
-            }
+        #tableBody { display: flex; flex-direction: column; gap: 10px; }
+        .order-card { background: var(--card-bg); border-radius: 12px; padding: 15px; box-shadow: 0 3px 8px rgba(0,0,0,0.15); border-left: 5px solid #ddd; transition: 0.3s; }
+        .order-card.packed { border-left-color: var(--success); }
+        .order-card.failed { border-left-color: var(--danger); }
+        .order-card.hidden { display: none; }
 
-            .check-col { width: 100%; padding-left: 50%; display: flex; justify-content: flex-end; align-items: center; }
-            #chat-container { width: 90% !important; right: 5% !important; height: 400px !important; }
-        }
+        .row-info { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.85rem; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 4px; }
+        body.dark-mode .row-info { border-bottom-color: rgba(255,255,255,0.05); }
+        .label { color: var(--label); font-weight: 600; }
+        .value { font-weight: 700; text-align: right; }
 
-        /* Chatbot Button & Container */
-        #chat-icon {
-            position: fixed; bottom: 20px; right: 20px; width: 55px; height: 55px;
-            background: var(--primary); border-radius: 50%; display: flex;
-            justify-content: center; align-items: center; color: white; cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3); z-index: 10000;
-        }
+        .action-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+        .btn-action { border: none; padding: 12px; border-radius: 8px; font-weight: 800; cursor: pointer; font-size: 0.8rem; background: #eee; color: #555; }
+        body.dark-mode .btn-action { background: #333; color: #ccc; }
+        .btn-p.active { background: var(--success); color: white; }
+        .btn-f.active { background: var(--danger); color: white; }
 
-        #chat-container {
-            position: fixed; bottom: 85px; right: 20px; width: 350px; height: 450px;
-            border: none; z-index: 9999; box-shadow: 0 5px 25px rgba(0,0,0,0.2);
-            border-radius: 12px; display: none;
-        }
+        /* Chatbot Container */
+        #chat-trigger { position: fixed; bottom: 20px; right: 20px; width: 50px; height: 50px; background: var(--primary); border-radius: 50%; display: flex; justify-content: center; align-items: center; color: white; font-size: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 1000; cursor: pointer; }
+        #chat-frame { position: fixed; bottom: 80px; right: 15px; width: 320px; height: 450px; border-radius: 15px; border: none; display: none; z-index: 999; box-shadow: 0 10px 30px rgba(0,0,0,0.4); }
+        @media (max-width: 500px) { #chat-frame { width: calc(100% - 30px); height: 60%; } }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h1>📦 Packing Assistant</h1>
-        
-        <div class="upload-section">
-            <label for="fileInput" class="custom-file-label">Select Excel File</label>
-            <input type="file" id="fileInput" accept=".csv, .xlsx, .xls" />
+        <div class="header-section">
+            <h1>📦 Smart Packing</h1>
+            <button class="theme-btn" onclick="toggleTheme()">🌙 Dark</button>
         </div>
 
-        <div id="stats" class="stats-bar">
-            <div class="stat-item">Total: <span id="totalCount">0</span></div>
-            <div class="stat-item" style="color: var(--success);">Packed: <span id="packedCount">0</span></div>
-            <div class="stat-item" style="color: var(--danger);">Failed: <span id="notPackedCount">0</span></div>
+        <div class="control-box">
+            <div class="btn-group">
+                <label for="fileInput" class="file-label">➕ Upload List</label>
+                <input type="file" id="fileInput" accept=".xlsx, .xls, .csv" />
+                <button class="btn-clear" onclick="clearAll()">🗑️ Clear</button>
+            </div>
         </div>
 
-        <div class="table-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Order #</th>
-                        <th>Customer</th>
-                        <th>Qty</th>
-                        <th>Product</th>
-                        <th class="check-col">Packed</th>
-                        <th class="check-col">Failed</th>
-                    </tr>
-                </thead>
-                <tbody id="tableBody"></tbody>
-            </table>
+        <input type="text" id="searchBar" class="search-box" placeholder="🔍 Search Name or Order #..." onkeyup="filterOrders()" />
+
+        <div class="stats-grid">
+            <div class="stat-card"><div>Total</div><div id="total">0</div></div>
+            <div class="stat-card" style="color: var(--success)"><div>Packed</div><div id="packed">0</div></div>
+            <div class="stat-card" style="color: var(--danger)"><div>Failed</div><div id="failed">0</div></div>
         </div>
+
+        <div id="tableBody"></div>
     </div>
 
-    <div id="chat-icon" onclick="toggleChat()">💬</div>
-    <iframe id="chat-container" src="https://cdn.botpress.cloud/webchat/v2.2/shareable.html?configUrl=https://files.bpcontent.cloud/2026/03/28/05/20260328054128-VW97585K.json"></iframe>
+    <div id="chat-trigger" onclick="toggleChat()">💬</div>
+    <iframe id="chat-frame" src="https://cdn.botpress.cloud/webchat/v2.2/shareable.html?configUrl=https://files.bpcontent.cloud/2026/03/28/05/20260328054128-VW97585K.json"></iframe>
 
     <script>
+        // دالة تبديل الثيم
+        function toggleTheme() {
+            const body = document.body;
+            body.classList.toggle('dark-mode');
+            const btn = document.querySelector('.theme-btn');
+            btn.innerText = body.classList.contains('dark-mode') ? '☀️ Light' : '🌙 Dark';
+        }
+
         function toggleChat() {
-            const c = document.getElementById('chat-container');
-            c.style.display = (c.style.display === 'none' || c.style.display === '') ? 'block' : 'none';
+            const f = document.getElementById('chat-frame');
+            f.style.display = (f.style.display === 'none' || f.style.display === '') ? 'block' : 'none';
         }
 
         document.getElementById('fileInput').addEventListener('change', function(e) {
@@ -162,43 +112,59 @@
             const reader = new FileReader();
             reader.onload = function(e) {
                 const data = new Uint8Array(e.target.result);
-                const workbook = XLSX.read(data, { type: 'array' });
-                const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
-                renderTable(jsonData);
+                const wb = XLSX.read(data, {type: 'array'});
+                const json = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: "" });
+                render(json);
+                document.getElementById('fileInput').value = "";
             };
             reader.readAsArrayBuffer(file);
         });
 
-        function renderTable(data) {
-            const body = document.getElementById('tableBody');
-            body.innerHTML = '';
-            let lastBilling = "";
-            data.forEach(row => {
-                let name = row['Billing Name'] || lastBilling;
-                lastBilling = name;
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td data-label="Order #"><b>${row['Name'] || ''}</b></td>
-                    <td data-label="Customer">${name || 'N/A'}</td>
-                    <td data-label="Qty">${row['Lineitem quantity'] || 0}</td>
-                    <td data-label="Product">${row['Lineitem name'] || ''}</td>
-                    <td data-label="Packed" class="check-col"><input type="checkbox" class="pack-btn" onchange="toggleBox(this, 'fail-btn')"></td>
-                    <td data-label="Failed" class="check-col"><input type="checkbox" class="fail-btn" onchange="toggleBox(this, 'pack-btn')"></td>
+        function render(data) {
+            const container = document.getElementById('tableBody');
+            container.innerHTML = '';
+            document.getElementById('total').innerText = data.length;
+            data.forEach((row, i) => {
+                const card = document.createElement('div');
+                card.className = 'order-card';
+                card.setAttribute('data-search', `${row['Name']} ${row['Billing Name']}`.toLowerCase());
+                card.innerHTML = `
+                    <div class="row-info"><span class="label">Order #</span><span class="value">${row['Name'] || i+1}</span></div>
+                    <div class="row-info"><span class="label">Customer</span><span class="value">${row['Billing Name'] || 'Guest'}</span></div>
+                    <div class="row-info"><span class="label">Qty</span><span class="value">${row['Lineitem quantity'] || '1'}</span></div>
+                    <div class="row-info"><span class="label">Product</span><span class="value">${row['Lineitem name'] || 'N/A'}</span></div>
+                    <div class="action-btns">
+                        <button class="btn-action btn-p" onclick="mark(this, 'packed')">Packed ✅</button>
+                        <button class="btn-action btn-f" onclick="mark(this, 'failed')">Failed ❌</button>
+                    </div>
                 `;
-                body.appendChild(tr);
+                container.appendChild(card);
             });
-            document.getElementById('totalCount').innerText = data.length;
-            update();
+            updateStats();
         }
 
-        function toggleBox(curr, other) {
-            if (curr.checked) curr.closest('tr').querySelector('.' + other).checked = false;
-            update();
+        function clearAll() { if (confirm("Are you sure you want to clear the list?")) { document.getElementById('tableBody').innerHTML = ''; updateStats(); } }
+
+        function filterOrders() {
+            const query = document.getElementById('searchBar').value.toLowerCase();
+            document.querySelectorAll('.order-card').forEach(card => {
+                card.classList.toggle('hidden', !card.getAttribute('data-search').includes(query));
+            });
         }
 
-        function update() {
-            document.getElementById('packedCount').innerText = document.querySelectorAll('.pack-btn:checked').length;
-            document.getElementById('notPackedCount').innerText = document.querySelectorAll('.fail-btn:checked').length;
+        function mark(btn, type) {
+            const card = btn.closest('.order-card');
+            card.querySelectorAll('.btn-action').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            card.classList.remove('packed', 'failed');
+            card.classList.add(type);
+            updateStats();
+        }
+
+        function updateStats() {
+            document.getElementById('total').innerText = document.querySelectorAll('.order-card').length;
+            document.getElementById('packed').innerText = document.querySelectorAll('.btn-p.active').length;
+            document.getElementById('failed').innerText = document.querySelectorAll('.btn-f.active').length;
         }
     </script>
 </body>
