@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Packing System | Pro</title>
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; margin: 0; padding: 20px; }
+        .container { max-width: 1100px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); margin-bottom: 100px; }
+        h1 { text-align: center; color: #1a73e8; }
+        .upload-section { text-align: center; margin-bottom: 25px; padding: 20px; border: 2px dashed #1a73e8; border-radius: 10px; background: #f8fbff; }
+        .custom-file-label { background: #1a73e8; color: white; padding: 12px 25px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        #fileInput { display: none; }
+        .stats-bar { display: flex; justify-content: space-around; background: #fff; padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #ddd; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
+        th { background: #f8f9fa; color: #666; font-size: 0.85rem; }
+        .check-col { text-align: center; width: 90px; }
+        input[type="checkbox"] { width: 22px; height: 22px; cursor: pointer; }
+
+        /* --- تصميم الزرار والدائرة --- */
+        #chat-icon {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background: #1a73e8;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 30px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            z-index: 10000;
+        }
+
+        #chat-container {
+            position: fixed;
+            bottom: 90px; /* فوق الزرار بشوية */
+            right: 20px;
+            width: 380px;
+            height: 500px;
+            border: none;
+            z-index: 9999;
+            box-shadow: 0 5px 25px rgba(0,0,0,0.2);
+            border-radius: 15px;
+            display: none; /* مخفي في البداية */
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>📦 Smart Packing System</h1>
+        
+        <div class="upload-section">
+            <p>Upload your CSV or Excel orders file</p>
+            <label for="fileInput" class="custom-file-label">Choose File</label>
+            <input type="file" id="fileInput" accept=".csv, .xlsx, .xls" />
+        </div>
+
+        <div id="stats" class="stats-bar">
+            <div class="stat-item">Total: <span id="totalCount">0</span></div>
+            <div class="stat-item" style="color: #28a745;">Packed: <span id="packedCount">0</span></div>
+            <div class="stat-item" style="color: #dc3545;">Missing: <span id="notPackedCount">0</span></div>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Order #</th>
+                        <th>Customer</th>
+                        <th>Qty</th>
+                        <th>Product</th>
+                        <th>Vendor</th>
+                        <th class="check-col">Packed</th>
+                        <th class="check-col">Failed</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="chat-icon" onclick="toggleChat()">💬</div>
+
+    <iframe id="chat-container" src="https://cdn.botpress.cloud/webchat/v2.2/shareable.html?configUrl=https://files.bpcontent.cloud/2026/03/28/05/20260328054128-VW97585K.json"></iframe>
+
+    <script>
+        // وظيفة فتح وقفل الشات
+        function toggleChat() {
+            const chat = document.getElementById('chat-container');
+            if (chat.style.display === 'none' || chat.style.display === '') {
+                chat.style.display = 'block';
+            } else {
+                chat.style.display = 'none';
+            }
+        }
+
+        // كود الإكسل (نفسه بدون تغيير)
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+                renderTable(jsonData);
+            };
+            reader.readAsArrayBuffer(file);
+        });
+
+        function renderTable(data) {
+            const body = document.getElementById('tableBody');
+            body.innerHTML = '';
+            let lastBilling = "";
+            data.forEach(row => {
+                let name = row['Billing Name'] || lastBilling;
+                lastBilling = name;
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><b>${row['Name'] || ''}</b></td>
+                    <td>${name || 'N/A'}</td>
+                    <td>${row['Lineitem quantity'] || 0}</td>
+                    <td>${row['Lineitem name'] || ''}</td>
+                    <td><small>${row['Vendor'] || ''}</small></td>
+                    <td class="check-col"><input type="checkbox" class="pack-btn" onchange="toggleBox(this, 'fail-btn')"></td>
+                    <td class="check-col"><input type="checkbox" class="fail-btn" onchange="toggleBox(this, 'pack-btn')"></td>
+                `;
+                body.appendChild(tr);
+            });
+            document.getElementById('totalCount').innerText = data.length;
+            update();
+        }
+
+        function toggleBox(curr, other) {
+            if (curr.checked) {
+                const row = curr.closest('tr');
+                const otherBox = row.querySelector('.' + other);
+                if (otherBox) otherBox.checked = false;
+            }
+            update();
+        }
+
+        function update() {
+            document.getElementById('packedCount').innerText = document.querySelectorAll('.pack-btn:checked').length;
+            document.getElementById('notPackedCount').innerText = document.querySelectorAll('.fail-btn:checked').length;
+        }
+    </script>
+</body>
+</html>
