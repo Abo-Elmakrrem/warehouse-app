@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Warehouse Pro | Dark Mode Edition</title>
+    <title>Warehouse Pro | Ultimate Edition</title>
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <style>
         :root { 
@@ -11,7 +11,6 @@
             --bg: #f5f7f8; --card-bg: #ffffff; --text: #333; --label: #888;
         }
 
-        /* Dark Mode Variables */
         body.dark-mode { 
             --bg: #121212; --card-bg: #1e1e1e; --text: #e0e0e0; --label: #aaa;
         }
@@ -22,31 +21,30 @@
         .header-section { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         h1 { color: var(--primary); font-size: 1.3rem; margin: 0; }
         
-        /* Dark Mode Toggle Button */
-        .theme-btn { background: var(--card-bg); border: 1px solid #ddd; padding: 8px 12px; border-radius: 20px; cursor: pointer; font-size: 0.8rem; font-weight: bold; color: var(--text); box-shadow: 0 2px 5px rgba(0,0,0,0.1); outline: none; }
+        .theme-btn { background: var(--card-bg); border: 1px solid #ddd; padding: 8px 15px; border-radius: 20px; cursor: pointer; font-size: 0.8rem; font-weight: bold; color: var(--text); outline: none; }
 
-        .control-box { background: var(--card-bg); border: 2px dashed var(--primary); padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 15px; transition: 0.3s; }
-        .btn-group { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 10px; }
+        .control-box { background: var(--card-bg); border: 2px dashed var(--primary); padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 15px; }
+        .btn-group { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
         
-        .file-label { background: var(--primary); color: white; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.85rem; }
-        .btn-clear { background: #666; color: white; border: none; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.85rem; }
+        /* الزرار بالتعديل الجديد */
+        .file-label { background: var(--primary); color: white; padding: 12px 18px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.9rem; display: inline-block; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .btn-clear { background: #666; color: white; border: none; padding: 12px 18px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.9rem; }
         #fileInput { display: none; }
 
         .search-box { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 15px; box-sizing: border-box; font-size: 1rem; background: var(--card-bg); color: var(--text); outline: none; }
 
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 15px; }
-        .stat-card { background: var(--card-bg); padding: 10px; border-radius: 10px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: 0.3s; }
+        .stat-card { background: var(--card-bg); padding: 10px; border-radius: 10px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .stat-card div:first-child { font-size: 0.7rem; color: var(--label); font-weight: bold; }
         .stat-card div:last-child { font-size: 1.1rem; font-weight: 900; }
 
         #tableBody { display: flex; flex-direction: column; gap: 10px; }
-        .order-card { background: var(--card-bg); border-radius: 12px; padding: 15px; box-shadow: 0 3px 8px rgba(0,0,0,0.15); border-left: 5px solid #ddd; transition: 0.3s; }
+        .order-card { background: var(--card-bg); border-radius: 12px; padding: 15px; box-shadow: 0 3px 8px rgba(0,0,0,0.15); border-left: 5px solid #ddd; }
         .order-card.packed { border-left-color: var(--success); }
         .order-card.failed { border-left-color: var(--danger); }
         .order-card.hidden { display: none; }
 
         .row-info { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.85rem; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 4px; }
-        body.dark-mode .row-info { border-bottom-color: rgba(255,255,255,0.05); }
         .label { color: var(--label); font-weight: 600; }
         .value { font-weight: 700; text-align: right; }
 
@@ -56,10 +54,9 @@
         .btn-p.active { background: var(--success); color: white; }
         .btn-f.active { background: var(--danger); color: white; }
 
-        /* Chatbot Container */
-        #chat-trigger { position: fixed; bottom: 20px; right: 20px; width: 50px; height: 50px; background: var(--primary); border-radius: 50%; display: flex; justify-content: center; align-items: center; color: white; font-size: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 1000; cursor: pointer; }
-        #chat-frame { position: fixed; bottom: 80px; right: 15px; width: 320px; height: 450px; border-radius: 15px; border: none; display: none; z-index: 999; box-shadow: 0 10px 30px rgba(0,0,0,0.4); }
-        @media (max-width: 500px) { #chat-frame { width: calc(100% - 30px); height: 60%; } }
+        #chat-trigger { position: fixed; bottom: 20px; right: 20px; width: 55px; height: 55px; background: var(--primary); border-radius: 50%; display: flex; justify-content: center; align-items: center; color: white; font-size: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 1000; cursor: pointer; }
+        #chat-frame { position: fixed; bottom: 85px; right: 15px; width: 330px; height: 480px; border-radius: 15px; border: none; display: none; z-index: 999; box-shadow: 0 10px 30px rgba(0,0,0,0.4); }
+        @media (max-width: 500px) { #chat-frame { width: calc(100% - 30px); height: 65%; } }
     </style>
 </head>
 <body>
@@ -72,7 +69,7 @@
 
         <div class="control-box">
             <div class="btn-group">
-                <label for="fileInput" class="file-label">➕ Upload List</label>
+                <label for="fileInput" class="file-label">➕ Upload Excel or CSV</label>
                 <input type="file" id="fileInput" accept=".xlsx, .xls, .csv" />
                 <button class="btn-clear" onclick="clearAll()">🗑️ Clear</button>
             </div>
@@ -93,7 +90,6 @@
     <iframe id="chat-frame" src="https://cdn.botpress.cloud/webchat/v2.2/shareable.html?configUrl=https://files.bpcontent.cloud/2026/03/28/05/20260328054128-VW97585K.json"></iframe>
 
     <script>
-        // دالة تبديل الثيم
         function toggleTheme() {
             const body = document.body;
             body.classList.toggle('dark-mode');
@@ -143,7 +139,7 @@
             updateStats();
         }
 
-        function clearAll() { if (confirm("Are you sure you want to clear the list?")) { document.getElementById('tableBody').innerHTML = ''; updateStats(); } }
+        function clearAll() { if (confirm("Delete everything?")) { document.getElementById('tableBody').innerHTML = ''; updateStats(); } }
 
         function filterOrders() {
             const query = document.getElementById('searchBar').value.toLowerCase();
