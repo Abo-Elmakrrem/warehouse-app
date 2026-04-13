@@ -1,5 +1,5 @@
 let orders = [];
-
+// this is the logic for packer
 // DOM refs
 const fileInput = document.getElementById('fileInput');
 const orderList = document.getElementById('orderList');
@@ -173,3 +173,82 @@ function toggleChat() {
   const f = document.getElementById('chat-frame');
   f.style.display = f.style.display === 'block' ? 'none' : 'block';
 }
+
+// this vendor ordering logic
+function getProcurementData() {
+  const result = {};
+
+  orders.forEach(order => {
+    order.items.forEach(item => {
+      const vendor = item.vendor;
+      const name = item.name;
+      const qty = item.qty;
+
+      if (!result[vendor]) {
+        result[vendor] = {};
+      }
+
+      if (!result[vendor][name]) {
+        result[vendor][name] = 0;
+      }
+
+      result[vendor][name] += qty;
+    });
+  });
+
+  return result;
+}
+
+// Render procurement view
+
+
+function renderProcurement() {
+  const data = getProcurementData();
+
+  orderList.innerHTML = '';
+
+  Object.keys(data).forEach(vendor => {
+    const card = document.createElement('div');
+    card.className = 'order-card';
+
+    let itemsHtml = `<div><b>${vendor}</b></div>`;
+
+    Object.keys(data[vendor]).forEach(item => {
+      itemsHtml += `
+        <div class="item-row">
+          <span>${item}</span>
+          <b>x${data[vendor][item]}</b>
+        </div>
+      `;
+    });
+
+    card.innerHTML = itemsHtml;
+    orderList.appendChild(card);
+  });
+}
+
+document.getElementById('procurementBtn').onclick = renderProcurement;
+
+function exportProcurement() {
+  const data = getProcurementData();
+  const final = [];
+
+  Object.keys(data).forEach(vendor => {
+    Object.keys(data[vendor]).forEach(item => {
+      final.push({
+        Vendor: vendor,
+        Item: item,
+        Total_Quantity: data[vendor][item]
+      });
+    });
+  });
+
+  const ws = XLSX.utils.json_to_sheet(final);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Procurement");
+
+  XLSX.writeFile(wb, `Procurement_Report.xlsx`);
+}
+
+document.getElementById('packingViewBtn').onclick = render;
+document.getElementById('exportProcurementBtn').onclick = exportProcurement;
