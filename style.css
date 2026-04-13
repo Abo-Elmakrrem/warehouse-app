@@ -1,0 +1,147 @@
+:root {
+  --p: #1a73e8;
+  --s: #2e7d32;
+  --w: #f9a825;
+  --bg: #f0f2f5;
+  --c: #fff;
+  --t: #333;
+}
+
+body.dark-mode {
+  --bg: #121212;
+  --c: #1e1e1e;
+  --t: #e0e0e0;
+}
+
+body {
+  font-family: -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--t);
+  margin: 0;
+  padding: 10px;
+}
+
+.container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding-bottom: 80px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 15px;
+}
+
+.controls {
+  background: var(--c);
+  padding: 15px;
+  border-radius: 12px;
+  margin-bottom: 15px;
+  border: 2px dashed var(--p);
+  text-align: center;
+}
+
+.controls-row {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btn {
+  padding: 10px 15px;
+  border-radius: 8px;
+  border: none;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.btn-p { background: var(--p); color: #fff; }
+.btn-ex { background: #fb8c00; color: #fff; }
+.btn-cl { background: #666; color: #fff; }
+
+#fileInput { display: none; }
+
+.search {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  margin-bottom: 15px;
+}
+
+.order-card {
+  background: var(--c);
+  padding: 15px;
+  border-radius: 15px;
+  margin-bottom: 20px;
+  border-left: 8px solid #ccc;
+}
+
+.order-card.partial { border-left-color: var(--w); }
+.order-card.complete { border-left-color: var(--s); }
+
+.item-row {
+  display: flex;
+  gap: 10px;
+  padding: 10px;
+  margin-bottom: 6px;
+}
+
+.item-row.checked {
+  border-color: var(--s);
+  opacity: 0.8;
+}
+
+.check-box {
+  width: 22px;
+  height: 22px;
+}
+
+#chat-icon {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+}
+
+.vendor {
+  font-size: 0.7rem;
+  background: var(--p);
+  color: white;
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
+.order-card {
+  border-left: 8px solid #ccc;
+}
+
+.order-card.partial {
+  border-left-color: var(--w);
+}
+
+.order-card.complete {
+  border-left-color: var(--s);
+}
+/* ===== Mobile Responsive Fix ===== */
+@media (max-width: 500px) {
+  .item-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .qty-input {
+    width: 100%;
+    margin-top: 5px;
+  }
+
+  .vendor {
+    margin-top: 5px;
+  }
+}
+
+/* Improve input usability */
+.qty-input {
+  width: 60px;
+  text-align: center;
+}

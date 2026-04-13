@@ -2,183 +2,41 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Warehouse Pro | Ultimate System</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>El Meraki Packing</title>
+
+    <link rel="stylesheet" href="style.css">
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
-    <style>
-        :root { --p: #1a73e8; --s: #2e7d32; --w: #f9a825; --bg: #f0f2f5; --c: #fff; --t: #333; }
-        body.dark-mode { --bg: #121212; --c: #1e1e1e; --t: #e0e0e0; }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--t); margin: 0; padding: 10px; transition: 0.3s; }
-        .container { max-width: 600px; margin: 0 auto; padding-bottom: 80px; }
-        
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        h1 { font-size: 1.2rem; color: var(--p); margin: 0; }
-
-        /* الأزرار العلوية */
-        .controls { background: var(--c); padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 2px dashed var(--p); text-align: center; }
-        .btn { padding: 10px 15px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; font-size: 0.85rem; transition: 0.2s; }
-        .btn-p { background: var(--p); color: #fff; }
-        .btn-ex { background: #fb8c00; color: #fff; }
-        .btn-cl { background: #666; color: #fff; }
-        #fileInput { display: none; }
-
-        .search { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ddd; margin-bottom: 15px; background: var(--c); color: var(--t); outline: none; }
-
-        /* الكروت */
-        .order-card { background: var(--c); padding: 15px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 20px; border-left: 8px solid #ccc; transition: 0.3s; }
-        .order-card.partial { border-left-color: var(--w); background: rgba(249, 168, 37, 0.03); }
-        .order-card.complete { border-left-color: var(--s); background: rgba(46, 125, 50, 0.03); }
-
-        .order-id { font-weight: 900; color: var(--p); font-size: 1.1rem; }
-        .cust-name { font-weight: 700; display: block; margin: 3px 0; }
-
-        /* الأصناف جوه الأوردر */
-        .items-list { margin-top: 10px; }
-        .item-row { 
-            display: flex; align-items: center; gap: 10px; padding: 10px; 
-            border-radius: 8px; background: rgba(0,0,0,0.02); margin-bottom: 6px; 
-            border: 1px solid transparent; transition: 0.2s;
-        }
-        body.dark-mode .item-row { background: rgba(255,255,255,0.05); }
-        .item-row.checked { border-color: var(--s); opacity: 0.8; }
-        
-        .check-box { width: 22px; height: 22px; cursor: pointer; accent-color: var(--s); }
-        .item-name { flex: 1; font-size: 0.85rem; }
-        .qty { font-weight: 900; color: var(--p); }
-
-        /* Chatbot UI */
-        #chat-icon { position: fixed; bottom: 20px; right: 20px; width: 55px; height: 55px; background: var(--p); border-radius: 50%; display: flex; justify-content: center; align-items: center; color: white; font-size: 24px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 1000; }
-        #chat-frame { position: fixed; bottom: 85px; right: 15px; width: 330px; height: 450px; border-radius: 15px; border: none; display: none; z-index: 999; box-shadow: 0 10px 30px rgba(0,0,0,0.4); }
-        @media (max-width: 500px) { #chat-frame { width: calc(100% - 30px); height: 60%; } }
-    </style>
+    <script src="script.js" defer></script>
 </head>
+
 <body>
 
 <div class="container">
     <div class="header">
-        <h1>📦 Packing System v5</h1>
-        <button class="btn btn-cl" style="padding:5px 12px" onclick="document.body.classList.toggle('dark-mode')">🌙 Mode</button>
+        <h1>📦 Packing System</h1>
+        <button id="darkModeBtn" class="btn btn-cl">🌙 Mode</button>
     </div>
 
     <div class="controls">
-        <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
+        <div class="controls-row">
             <label for="fileInput" class="btn btn-p">➕ Upload File</label>
             <input type="file" id="fileInput" accept=".xlsx, .xls, .csv" />
             
-            <button class="btn btn-ex" onclick="exportData()">📥 Download Report</button>
-            <button class="btn btn-cl" onclick="clearAll()">🗑️ Clear List</button>
+            <button id="exportBtn" class="btn btn-ex">📥 Download Report</button>
+            <button id="clearBtn" class="btn btn-cl">🗑️ Clear List</button>
         </div>
     </div>
 
-    <input type="text" class="search" placeholder="🔍 Search Order or Name..." onkeyup="filter()">
+    <input id="searchInput" type="text" class="search" placeholder="🔍 Search Order or Name...">
+    <!-- dropdown for vendor -->
+    
 
     <div id="orderList"></div>
 </div>
 
-<div id="chat-icon" onclick="toggleChat()">💬</div>
+<div id="chat-icon">💬</div>
 <iframe id="chat-frame" src="https://cdn.botpress.cloud/webchat/v2.2/shareable.html?configUrl=https://files.bpcontent.cloud/2026/03/28/05/20260328054128-VW97585K.json"></iframe>
-
-<script>
-    let orders = [];
-
-    function toggleChat() {
-        const f = document.getElementById('chat-frame');
-        f.style.display = (f.style.display === 'none' || f.style.display === '') ? 'block' : 'none';
-    }
-
-    document.getElementById('fileInput').addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const data = new Uint8Array(e.target.result);
-            const wb = XLSX.read(data, {type: 'array'});
-            const raw = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: "" });
-            
-            const map = new Map();
-            raw.forEach(row => {
-                const id = row.Name;
-                if (!map.has(id)) {
-                    map.set(id, {
-                        id: id,
-                        customer: row['Billing Name'] || "N/A",
-                        items: [],
-                        originalRows: []
-                    });
-                }
-                const order = map.get(id);
-                if (order.customer === "N/A" && row['Billing Name']) order.customer = row['Billing Name'];
-                order.items.push({ name: row['Lineitem name'], qty: row['Lineitem quantity'], isPacked: false, rowRef: row });
-            });
-            
-            orders = Array.from(map.values());
-            render();
-        };
-        reader.readAsArrayBuffer(file);
-    });
-
-    function render() {
-        const list = document.getElementById('orderList');
-        list.innerHTML = '';
-        orders.forEach((order, oIdx) => {
-            const packedCount = order.items.filter(i => i.isPacked).length;
-            const isComplete = packedCount === order.items.length;
-            const isPartial = packedCount > 0 && packedCount < order.items.length;
-
-            const card = document.createElement('div');
-            card.className = `order-card ${isComplete ? 'complete' : isPartial ? 'partial' : ''}`;
-            card.setAttribute('data-search', `${order.id} ${order.customer}`.toLowerCase());
-
-            const itemsHtml = order.items.map((item, iIdx) => `
-                <div class="item-row ${item.isPacked ? 'checked' : ''}">
-                    <input type="checkbox" class="check-box" ${item.isPacked ? 'checked' : ''} 
-                           onchange="toggleItem(${oIdx}, ${iIdx})">
-                    <span class="item-name">${item.name}</span>
-                    <b class="qty">x${item.qty}</b>
-                </div>
-            `).join('');
-
-            card.innerHTML = `
-                <div class="order-id">Order ${order.id}</div>
-                <div class="cust-name">${order.customer}</div>
-                <div style="font-size:0.7rem; color:var(--p); margin-top:3px; font-weight:bold;">
-                    Checked: ${packedCount} / ${order.items.length}
-                </div>
-                <div class="items-list">${itemsHtml}</div>
-            `;
-            list.appendChild(card);
-        });
-    }
-
-    function toggleItem(oIdx, iIdx) {
-        orders[oIdx].items[iIdx].isPacked = !orders[oIdx].items[iIdx].isPacked;
-        render();
-    }
-
-    function exportData() {
-        if (orders.length === 0) return alert("No data to export!");
-        const final = [];
-        orders.forEach(o => {
-            o.items.forEach(i => {
-                final.push({ ...i.rowRef, "Packing Status": i.isPacked ? "Packed" : "Missing" });
-            });
-        });
-        const ws = XLSX.utils.json_to_sheet(final);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Report");
-        XLSX.writeFile(wb, `Packing_Report_${new Date().toLocaleDateString()}.xlsx`);
-    }
-
-    function clearAll() {
-        if (confirm("Clear all orders?")) { orders = []; render(); }
-    }
-
-    function filter() {
-        const q = document.querySelector('.search').value.toLowerCase();
-        document.querySelectorAll('.order-card').forEach(c => {
-            c.style.display = c.getAttribute('data-search').includes(q) ? 'block' : 'none';
-        });
-    }
-</script>
 
 </body>
 </html>
