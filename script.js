@@ -23,6 +23,7 @@ fileInput.addEventListener('change', handleFile);
 // =====================
 
 function handleFile(e) {
+  
   const file = e.target.files[0];
   const reader = new FileReader();
 
@@ -40,23 +41,33 @@ function handleFile(e) {
         map.set(id, {
           id,
           customer: row['Billing Name'] || "N/A",
-          items: []
+          items: [],
+          itemMap: {}
         });
       }
 
       const order = map.get(id);
 
-      order.items.push({
-        name: row['Lineitem name'],
-        qty: Number(row['Lineitem quantity']),
-        packedQty: 0,
-        vendor: row['Vendor'] || "Unknown",
+      const itemKey = row['Lineitem name']?.toLowerCase().trim();
 
-        rowRef: row
-      });
+      if (!order.itemMap[itemKey]) {
+        order.itemMap[itemKey] = {
+          name: row['Lineitem name'],
+          qty: Number(row['Lineitem quantity']),
+          fulfilledQty: Number(row['Lineitem fulfilled quantity']) || 0,
+          packedQty: 0,
+          vendor: row['Vendor'] || "Unknown",
+          fulfillmentStatus: row['Lineitem fulfillment status']?.toLowerCase() || 'unfulfilled',
+          rowRef: row
+        };
+      }
     });
 
-    orders = Array.from(map.values());
+    orders = Array.from(map.values()).map(order => {
+        order.items = Object.values(order.itemMap);
+        delete order.itemMap;
+        return order;
+      });
     render();
   };
 
@@ -67,13 +78,12 @@ function render() {
   orderList.innerHTML = '';
 
   orders.forEach((order, oIdx) => {
-   const packedCount = order.items.filter(i => i.packedQty === i.qty).length;
+  const packedCount = order.items.filter(item => {
+    const remainingQty = item.qty - (item.fulfilledQty || 0);
+    return item.packedQty === remainingQty;
+  }).length;
 
-const hasAnyPacked = order.items.some(i => i.packedQty > 0);
-
-
-
-  const isComplete = packedCount === order.items.length;
+  const isComplete = packedCount === order.items.length && order.items.length > 0;
   const isPartial = packedCount > 0 && packedCount < order.items.length;
 
   const card = document.createElement('div');
@@ -88,43 +98,86 @@ const hasAnyPacked = order.items.some(i => i.packedQty > 0);
     <div>Checked: ${packedCount}/${order.items.length}</div>
   `;
 
-    order.items.forEach((item, iIdx) => {
-      const row = document.createElement('div');
-      row.className = 'item-row';
+order.items.forEach((item, iIdx) => {
+  const remainingQty = item.qty - (item.fulfilledQty || 0);
 
-      row.innerHTML = `
-        <span class="item-name">${item.name}</span>
-        <span class="vendor">${item.vendor}</span>
+  let statusLabel = '';
 
-        <input 
-          type="number" 
-          min="0" 
-          max="${item.qty}" 
-          value="${item.packedQty}" 
-          class="qty-input"
-        >
+  if (item.fulfillmentStatus === 'fulfilled') {
+    statusLabel = `<span class="fulfilled-label">Fulfilled</span>`;
+  } else if (item.fulfillmentStatus === 'partial') {
+    statusLabel = `<span class="partial-label">Partial</span>`;
+  } else {
+    statusLabel = `<span class="unfulfilled-label">Unfulfilled</span>`;
+  }
+  const row = document.createElement('div');
+  row.className = 'item-row';
 
-        <b>x${item.qty}</b>
+    row.innerHTML = `
+      <span class="item-name">${item.name}</span>
+      <span class="vendor">${item.vendor}</span>
+
+      <input 
+        type="number" 
+        min="0" 
+        max="${remainingQty}" 
+        value="${item.packedQty}" 
+        class="qty-input"
+      >
+      <button class="full-btn">FULL</button>
+
+      <b>x${remainingQty}</b>
+      ${statusLabel}
     `;
 
-     const input = row.querySelector('input');
+  const input = row.querySelector('input');
+  const fullBtn = row.querySelector('.full-btn');
 
-      input.addEventListener('input', (e) => {
+  if (fullBtn) {
+    fullBtn.addEventListener('click', () => {
+      orders[oIdx].items[iIdx].packedQty = remainingQty;
+
+      render();
+      filter();
+    });
+  }
+
+  if (input) {
+    input.addEventListener('input', (e) => {
       let val = Number(e.target.value);
 
-      if (val > item.qty) val = item.qty;
+      if (val > remainingQty) val = remainingQty;
       if (val < 0) val = 0;
 
       orders[oIdx].items[iIdx].packedQty = val;
 
+      const currentOrder = oIdx;
+      const currentItem = iIdx;
+
       render();
-    });
+      filter();
 
-      card.appendChild(row);
-    });
+      const cards = document.querySelectorAll('.order-card');
+      const targetCard = cards[currentOrder];
 
-    orderList.appendChild(card);
-  });
+      if (targetCard) {
+        const inputs = targetCard.querySelectorAll('.qty-input');
+        const targetInput = inputs[currentItem];
+
+        if (targetInput) {
+          targetInput.focus();
+          targetInput.select();
+        }
+      }
+    });
+  }
+
+  card.appendChild(row); // 🔥 THIS WAS MISSING
+});
+orderList.appendChild(card); // 🔥 VERY IMPORTANT
+
+  }); // 🔥 CLOSE LOOP
+
 }
 
 
@@ -134,18 +187,33 @@ function exportData() {
   const final = [];
 
   orders.forEach(o => {
-    o.items.forEach(i => {
-      final.push({
-        Order: o.id,
-        Customer: o.customer,
-        Item: i.name,
-        Vendor: i.vendor,
-        Ordered: i.qty,
-        Packed: i.packedQty,
-        Missing: i.qty - i.packedQty
-      });
+  o.items.forEach(i => {
+
+    const remainingQty = i.qty - (i.fulfilledQty || 0);
+
+    let status =
+      remainingQty === 0
+        ? 'Already Fulfilled'
+        : i.packedQty === remainingQty
+        ? 'Packed'
+        : i.packedQty > 0
+        ? 'Partial'
+        : 'Pending';
+
+    final.push({
+      Order: o.id,
+      Customer: o.customer,
+      Item: i.name,
+      Vendor: i.vendor,
+      Fulfillment: i.fulfillmentStatus,
+      Ordered: i.qty,
+      Packed: i.packedQty,
+      Missing: remainingQty - i.packedQty,
+      Status: status
     });
+
   });
+});
 
   const ws = XLSX.utils.json_to_sheet(final);
   const wb = XLSX.utils.book_new();
