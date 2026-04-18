@@ -1,17 +1,26 @@
+/* =============================
+   🎨 COLOR SYSTEM (THEME)
+   ============================= */
+
 :root {
-  --p: #1a73e8;
-  --s: #2e7d32;
-  --w: #f9a825;
-  --bg: #f0f2f5;
-  --c: #fff;
-  --t: #333;
+  --p: #1a73e8; /* Primary (blue) */
+  --s: #2e7d32; /* Success (green) */
+  --w: #f9a825; /* Warning (yellow) */
+  --bg: #f0f2f5; /* Background */
+  --c: #fff; /* Card color */
+  --t: #333; /* Text color */
 }
 
+/* Dark mode overrides */
 body.dark-mode {
   --bg: #121212;
   --c: #1e1e1e;
   --t: #e0e0e0;
 }
+
+/* =============================
+   🧱 GLOBAL LAYOUT
+   ============================= */
 
 body {
   font-family: -apple-system, sans-serif;
@@ -33,35 +42,72 @@ body {
   margin-bottom: 15px;
 }
 
+/* =============================
+   🎛️ CONTROLS (UPLOAD + BUTTONS)
+   ============================= */
+
 .controls {
   background: var(--c);
   padding: 15px;
   border-radius: 12px;
-  margin-bottom: 15px;
+  margin: 20px 0;
   border: 2px dashed var(--p);
   text-align: center;
 }
 
 .controls-row {
   display: flex;
-  gap: 8px;
+  gap: 12px;
   justify-content: center;
+  align-items: center;
   flex-wrap: wrap;
 }
 
+/* =============================
+   🔘 BUTTONS
+   ============================= */
+
 .btn {
-  padding: 10px 15px;
+  padding: 10px 16px;
   border-radius: 8px;
   border: none;
   font-weight: bold;
   cursor: pointer;
+  font-size: 14px;
+  transition: 0.2s;
 }
 
-.btn-p { background: var(--p); color: #fff; }
-.btn-ex { background: #fb8c00; color: #fff; }
-.btn-cl { background: #666; color: #fff; }
+.btn:hover {
+  opacity: 0.85;
+}
 
-#fileInput { display: none; }
+.btn-p {
+  background: var(--p);
+  color: white;
+}
+
+.btn-ex {
+  background: #fb8c00;
+  color: white;
+}
+
+.btn-cl {
+  background: #666;
+  color: white;
+}
+
+/* =============================
+   📁 FILE INPUT (HIDDEN)
+   ============================= */
+
+#fileInput,
+#inventoryInput {
+  display: none;
+}
+
+/* =============================
+   🔍 SEARCH BAR
+   ============================= */
 
 .search {
   width: 100%;
@@ -69,6 +115,10 @@ body {
   border-radius: 10px;
   margin-bottom: 15px;
 }
+
+/* =============================
+   📦 ORDER CARDS
+   ============================= */
 
 .order-card {
   background: var(--c);
@@ -78,31 +128,45 @@ body {
   border-left: 8px solid #ccc;
 }
 
-.order-card.partial { border-left-color: var(--w); }
-.order-card.complete { border-left-color: var(--s); }
+/* Status colors */
+.order-card.partial {
+  border-left-color: var(--w);
+}
+
+.order-card.complete {
+  border-left-color: var(--s);
+}
+
+/* =============================
+   📄 ITEM ROW
+   ============================= */
 
 .item-row {
   display: flex;
   gap: 10px;
   padding: 10px;
   margin-bottom: 6px;
+  align-items: center;
 }
 
+/* Checked state */
 .item-row.checked {
   border-color: var(--s);
   opacity: 0.8;
 }
 
-.check-box {
-  width: 22px;
-  height: 22px;
+/* =============================
+   🔢 INPUTS (QTY)
+   ============================= */
+
+.qty-input {
+  width: 60px;
+  text-align: center;
 }
 
-#chat-icon {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-}
+/* =============================
+   🏷️ LABELS & TAGS
+   ============================= */
 
 .vendor {
   font-size: 0.7rem;
@@ -112,18 +176,81 @@ body {
   border-radius: 6px;
 }
 
-.order-card {
-  border-left: 8px solid #ccc;
+.fulfilled-label {
+  font-size: 12px;
+  background: #ccc;
+  padding: 3px 6px;
+  border-radius: 5px;
 }
 
-.order-card.partial {
-  border-left-color: var(--w);
+/* =============================
+   🔘 FULL BUTTON
+   ============================= */
+
+.full-btn {
+  background: #4caf50;
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  margin-left: 5px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 12px;
 }
 
-.order-card.complete {
-  border-left-color: var(--s);
+.full-btn:hover {
+  background: #45a049;
 }
-/* ===== Mobile Responsive Fix ===== */
+
+/* =============================
+   💬 CHAT ICON
+   ============================= */
+
+#chat-icon {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+}
+
+/* =============================
+   🏠 HOME PAGE
+   ============================= */
+
+.home-container {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.menu {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-top: 30px;
+}
+
+.menu-btn {
+  background: var(--p);
+  color: white;
+  padding: 20px 40px;
+  text-decoration: none;
+  font-size: 18px;
+  border-radius: 12px;
+  text-align: center;
+  width: 250px;
+  transition: 0.2s;
+}
+
+.menu-btn:hover {
+  background: #1557c0;
+}
+
+/* =============================
+   📱 MOBILE RESPONSIVE
+   ============================= */
+
 @media (max-width: 500px) {
   .item-row {
     flex-direction: column;
@@ -139,30 +266,30 @@ body {
     margin-top: 5px;
   }
 }
-
-/* Improve input usability */
-.qty-input {
-  width: 60px;
-  text-align: center;
+/* Better item layout */
+.item-row {
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid #eee;
 }
 
-.fulfilled-label {
-  font-size: 12px;
-  background: #ccc;
-  padding: 3px 6px;
-  border-radius: 5px;
+/* Item name */
+.item-name {
+  font-size: 14px;
+  margin-bottom: 5px;
 }
-.full-btn {
-  background: #4caf50;
-  color: white;
-  border: none;
-  padding: 4px 8px;
-  margin-left: 5px;
-  border-radius: 5px;
-  cursor: pointer;
+
+/* Meta row */
+.item-meta {
+  display: flex;
+  gap: 10px;
   font-size: 12px;
 }
 
-.full-btn:hover {
-  background: #45a049;
+/* Highlight need */
+.need {
+  color: red;
+  font-weight: bold;
 }

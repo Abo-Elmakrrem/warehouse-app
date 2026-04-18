@@ -1,26 +1,49 @@
+// =============================
+// 📦 STATE (Data Layer)
+// =============================
+
+// Main data: all orders
 let orders = [];
-// this is the logic for packer
-// DOM refs
+
+// Load saved orders from localStorage (if exists)
+const savedOrders = localStorage.getItem('orders');
+
+if (savedOrders) {
+  orders = JSON.parse(savedOrders);
+}
+
+// =============================
+// 📌 DOM REFERENCES (UI Elements)
+// =============================
+
 const fileInput = document.getElementById('fileInput');
 const orderList = document.getElementById('orderList');
 const searchInput = document.getElementById('searchInput');
 
-// Buttons
+// =============================
+// 🎛️ BUTTONS & EVENTS
+// =============================
+
+// Toggle dark mode
 document.getElementById('darkModeBtn').onclick = () => {
   document.body.classList.toggle('dark-mode');
 };
 
+// Export report
 document.getElementById('exportBtn').onclick = exportData;
+
+// Clear all data
 document.getElementById('clearBtn').onclick = clearAll;
-document.getElementById('chat-icon').onclick = toggleChat;
+
+// Search filtering
 searchInput.addEventListener('keyup', filter);
 
 // File upload
 fileInput.addEventListener('change', handleFile);
 
-// =====================
-// CORE LOGIC
-// =====================
+// =============================
+// 📤 FILE UPLOAD → PARSE CSV/XLSX
+// =============================
 
 function handleFile(e) {
   const file = e.target.files[0];
@@ -28,22 +51,31 @@ function handleFile(e) {
 
   reader.onload = function (e) {
     const data = new Uint8Array(e.target.result);
+
+    // Read Excel file
     const wb = XLSX.read(data, { type: 'array' });
+
+    // Convert to JSON
     const raw = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {
       defval: '',
     });
+
+    // =============================
+    // 🧠 TRANSFORM DATA → GROUP BY ORDER
+    // =============================
 
     const map = new Map();
 
     raw.forEach((row) => {
       const id = row.Name;
 
+      // Create new order if not exists
       if (!map.has(id)) {
         map.set(id, {
           id,
           customer: row['Billing Name'] || 'N/A',
           items: [],
-          itemMap: {},
+          itemMap: {}, // temp structure to avoid duplicates
         });
       }
 
@@ -51,6 +83,7 @@ function handleFile(e) {
 
       const itemKey = row['Lineitem name']?.toLowerCase().trim();
 
+      // Avoid duplicate items (important!)
       if (!order.itemMap[itemKey]) {
         order.itemMap[itemKey] = {
           name: row['Lineitem name'],
@@ -65,21 +98,32 @@ function handleFile(e) {
       }
     });
 
+    // Convert map → array
     orders = Array.from(map.values()).map((order) => {
       order.items = Object.values(order.itemMap);
       delete order.itemMap;
       return order;
     });
+
+    // Save to localStorage
+    localStorage.setItem('orders', JSON.stringify(orders));
+
+    // Render UI
     render();
   };
 
   reader.readAsArrayBuffer(file);
 }
 
+// =============================
+// 📊 RENDER PACKING UI
+// =============================
+
 function render() {
   orderList.innerHTML = '';
 
   orders.forEach((order, oIdx) => {
+    // Count completed items
     const packedCount = order.items.filter((item) => {
       const remainingQty = item.qty - (item.fulfilledQty || 0);
       return item.packedQty === remainingQty;
@@ -87,23 +131,29 @@ function render() {
 
     const isComplete =
       packedCount === order.items.length && order.items.length > 0;
+
     const isPartial = packedCount > 0 && packedCount < order.items.length;
 
+    // Create order card
     const card = document.createElement('div');
-
     card.className = `order-card ${
       isComplete ? 'complete' : isPartial ? 'partial' : ''
     }`;
 
     card.innerHTML = `
-    <div><b>Order ${order.id}</b></div>
-    <div>${order.customer}</div>
-    <div>Checked: ${packedCount}/${order.items.length}</div>
-  `;
+      <div><b>Order ${order.id}</b></div>
+      <div>${order.customer}</div>
+      <div>Checked: ${packedCount}/${order.items.length}</div>
+    `;
+
+    // =============================
+    // 🧱 ITEMS LOOP
+    // =============================
 
     order.items.forEach((item, iIdx) => {
       const remainingQty = item.qty - (item.fulfilledQty || 0);
 
+      // Status label
       let statusLabel = '';
 
       if (item.fulfillmentStatus === 'fulfilled') {
@@ -113,37 +163,50 @@ function render() {
       } else {
         statusLabel = `<span class="unfulfilled-label">Unfulfilled</span>`;
       }
+
       const row = document.createElement('div');
       row.className = 'item-row';
 
       row.innerHTML = `
-      <span class="item-name">${item.name}</span>
-      <span class="vendor">${item.vendor}</span>
+        <span class="item-name">${item.name}</span>
+        <span class="vendor">${item.vendor}</span>
 
-      <input 
-        type="number" 
-        min="0" 
-        max="${remainingQty}" 
-        value="${item.packedQty}" 
-        class="qty-input"
-      >
-      <button class="full-btn">FULL</button>
+        <input 
+          type="number" 
+          min="0" 
+          max="${remainingQty}" 
+          value="${item.packedQty}" 
+          class="qty-input"
+        >
 
-      <b>x${remainingQty}</b>
-      ${statusLabel}
-    `;
+        <button class="full-btn">FULL</button>
+
+        <b>x${remainingQty}</b>
+        ${statusLabel}
+      `;
 
       const input = row.querySelector('input');
       const fullBtn = row.querySelector('.full-btn');
+
+      // =============================
+      // 🔥 FULL BUTTON
+      // =============================
 
       if (fullBtn) {
         fullBtn.addEventListener('click', () => {
           orders[oIdx].items[iIdx].packedQty = remainingQty;
 
+          // Save state
+          localStorage.setItem('orders', JSON.stringify(orders));
+
           render();
           filter();
         });
       }
+
+      // =============================
+      // ✏️ INPUT CHANGE
+      // =============================
 
       if (input) {
         input.addEventListener('input', (e) => {
@@ -154,12 +217,16 @@ function render() {
 
           orders[oIdx].items[iIdx].packedQty = val;
 
+          // Save state
+          localStorage.setItem('orders', JSON.stringify(orders));
+
           const currentOrder = oIdx;
           const currentItem = iIdx;
 
           render();
           filter();
 
+          // Restore focus
           const cards = document.querySelectorAll('.order-card');
           const targetCard = cards[currentOrder];
 
@@ -175,11 +242,16 @@ function render() {
         });
       }
 
-      card.appendChild(row); // 🔥 THIS WAS MISSING
+      card.appendChild(row);
     });
-    orderList.appendChild(card); // 🔥 VERY IMPORTANT
-  }); // 🔥 CLOSE LOOP
+
+    orderList.appendChild(card);
+  });
 }
+
+// =============================
+// 📥 EXPORT REPORT
+// =============================
 
 function exportData() {
   if (!orders.length) return alert('No data');
@@ -220,12 +292,21 @@ function exportData() {
   XLSX.writeFile(wb, `Packing_Report.xlsx`);
 }
 
+// =============================
+// 🧹 CLEAR ALL DATA
+// =============================
+
 function clearAll() {
   if (confirm('Clear all orders?')) {
     orders = [];
+    localStorage.removeItem('orders');
     render();
   }
 }
+
+// =============================
+// 🔍 SEARCH FILTER
+// =============================
 
 function filter() {
   const q = searchInput.value.toLowerCase();
@@ -235,85 +316,19 @@ function filter() {
   });
 }
 
+// =============================
+// 💬 CHAT TOGGLE (OPTIONAL)
+// =============================
+
 function toggleChat() {
   const f = document.getElementById('chat-frame');
   f.style.display = f.style.display === 'block' ? 'none' : 'block';
 }
 
-// this vendor ordering logic
-function getProcurementData() {
-  const result = {};
+// =============================
+// 🚀 INITIAL LOAD
+// =============================
 
-  orders.forEach((order) => {
-    order.items.forEach((item) => {
-      const vendor = item.vendor;
-      const name = item.name;
-      const qty = item.qty;
-
-      if (!result[vendor]) {
-        result[vendor] = {};
-      }
-
-      if (!result[vendor][name]) {
-        result[vendor][name] = 0;
-      }
-
-      result[vendor][name] += qty;
-    });
-  });
-
-  return result;
+if (orders.length) {
+  render();
 }
-
-// Render procurement view
-
-function renderProcurement() {
-  const data = getProcurementData();
-
-  orderList.innerHTML = '';
-
-  Object.keys(data).forEach((vendor) => {
-    const card = document.createElement('div');
-    card.className = 'order-card';
-
-    let itemsHtml = `<div><b>${vendor}</b></div>`;
-
-    Object.keys(data[vendor]).forEach((item) => {
-      itemsHtml += `
-        <div class="item-row">
-          <span>${item}</span>
-          <b>x${data[vendor][item]}</b>
-        </div>
-      `;
-    });
-
-    card.innerHTML = itemsHtml;
-    orderList.appendChild(card);
-  });
-}
-
-document.getElementById('procurementBtn').onclick = renderProcurement;
-
-function exportProcurement() {
-  const data = getProcurementData();
-  const final = [];
-
-  Object.keys(data).forEach((vendor) => {
-    Object.keys(data[vendor]).forEach((item) => {
-      final.push({
-        Vendor: vendor,
-        Item: item,
-        Total_Quantity: data[vendor][item],
-      });
-    });
-  });
-
-  const ws = XLSX.utils.json_to_sheet(final);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Procurement');
-
-  XLSX.writeFile(wb, `Procurement_Report.xlsx`);
-}
-
-document.getElementById('packingViewBtn').onclick = render;
-document.getElementById('exportProcurementBtn').onclick = exportProcurement;

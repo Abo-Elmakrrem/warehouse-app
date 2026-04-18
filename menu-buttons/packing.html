@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Packing</title>
+
+    <link rel="stylesheet" href="../style.css" />
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <script src="../js-files-for-menu-buttons/packing.js" defer></script>
+  </head>
+
+  <body>
+    <a href="../index.html" class="btn btn-cl">⬅ Back</a>
+
+    <div class="container">
+      <div class="header">
+        <h1>📦 Packing System</h1>
+        <button id="darkModeBtn" class="btn btn-cl">🌙 Mode</button>
+      </div>
+
+      <div class="controls">
+        <div class="controls-row">
+          <label for="fileInput" class="btn btn-p">➕ Upload File</label>
+          <input type="file" id="fileInput" accept=".xlsx, .xls, .csv" />
+
+          <button id="exportBtn" class="btn btn-ex">📥 Download Report</button>
+          <button id="clearBtn" class="btn btn-cl">🗑️ Clear List</button>
+        </div>
+      </div>
+
+      <input
+        id="searchInput"
+        type="text"
+        class="search"
+        placeholder="🔍 Search Order or Name..."
+      />
+
+      <div id="orderList"></div>
+    </div>
+  </body>
+</html>
