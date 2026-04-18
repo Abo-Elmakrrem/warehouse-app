@@ -31,13 +31,9 @@
           <!-- Upload Orders -->
           <label for="fileInput" class="btn btn-p"> ➕ Upload Orders </label>
           <input type="file" id="fileInput" accept=".xlsx, .xls, .csv" />
-
-          <!-- Upload Inventory -->
-          <label for="inventoryInput" class="btn btn-p"> 📦 Inventory </label>
-          <input type="file" id="inventoryInput" accept=".xlsx, .xls, .csv" />
           <!-- shows the name of the uploaded file -->
           <span id="inventoryFileName" class="file-name"></span>
-
+          <button id="exportBtn" class="btn btn-ex">📥 Export</button>
           <!-- Clear Data -->
           <button id="clearBtn" class="btn btn-cl">🗑️ Clear</button>
         </div>
@@ -46,7 +42,21 @@
       <!-- =============================
            📊 OUTPUT (RESULT LIST)
            ============================= -->
-      <div id="orderList"></div>
+      <table class="inventory-table">
+        <thead>
+          <tr>
+            <th>Ordered</th>
+            <th>Vendor</th>
+            <th>Item</th>
+            <th>SKU</th>
+            <th>Order Qty</th>
+            <th>Stock</th>
+            <th>Need</th>
+          </tr>
+        </thead>
+
+        <tbody id="orderList"></tbody>
+      </table>
     </div>
   </body>
 </html>

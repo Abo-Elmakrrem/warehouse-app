@@ -2,11 +2,17 @@
 // 📦 STATE (DATA)
 // =============================
 
-// Orders from packing page
+// orders from packing page
 let orders = JSON.parse(localStorage.getItem('orders')) || [];
 
-// Inventory from uploaded file
+// inventory from inventory page
 let inventory = JSON.parse(localStorage.getItem('inventory')) || {};
+
+// ordered tracking (what is already ordered)
+let orderedMap = JSON.parse(localStorage.getItem('orderedMap')) || {};
+
+// rows used for export
+let currentRows = [];
 
 // =============================
 // 📌 DOM ELEMENTS
@@ -14,8 +20,8 @@ let inventory = JSON.parse(localStorage.getItem('inventory')) || {};
 
 const orderList = document.getElementById('orderList');
 const fileInput = document.getElementById('fileInput');
-const inventoryInput = document.getElementById('inventoryInput');
 const clearBtn = document.getElementById('clearBtn');
+const exportBtn = document.getElementById('exportBtn');
 const inventoryStatus = document.getElementById('inventoryFileName');
 
 // =============================
@@ -23,77 +29,23 @@ const inventoryStatus = document.getElementById('inventoryFileName');
 // =============================
 
 clearBtn.onclick = () => {
-  if (confirm('Clear procurement data?')) {
-    localStorage.removeItem('orders');
-    orders = [];
-    orderList.innerHTML = '';
-  }
+  if (!confirm('Clear procurement data?')) return;
+
+  localStorage.removeItem('orders');
+  orders = [];
+  orderList.innerHTML = '';
 };
 
 // =============================
-// 📦 INVENTORY UPLOAD
-// =============================
-
-inventoryInput.addEventListener('change', handleInventory);
-
-function handleInventory(e) {
-  const file = e.target.files[0];
-
-  if (!file) {
-    alert('Please select an inventory file');
-    return;
-  }
-
-  const reader = new FileReader();
-
-  reader.onload = function (e) {
-    const data = new Uint8Array(e.target.result);
-    const wb = XLSX.read(data, { type: 'array' });
-
-    const raw = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {
-      defval: '',
-    });
-
-    const map = {};
-
-    raw.forEach((row) => {
-      const keys = Object.keys(row);
-
-      // detect correct columns automatically
-      const nameKey = keys.find((k) => k.toLowerCase().includes('name'));
-      const stockKey = keys.find(
-        (k) =>
-          k.toLowerCase().includes('stock') || k.toLowerCase().includes('رصيد'),
-      );
-
-      const name = row[nameKey]?.toLowerCase().trim();
-      const stock = Number(row[stockKey]) || 0;
-
-      if (name) {
-        map[name] = stock;
-      }
-    });
-
-    inventory = map;
-
-    localStorage.setItem('inventory', JSON.stringify(inventory));
-
-    inventoryStatus.textContent = '✅ Inventory loaded';
-
-    renderProcurement();
-  };
-
-  reader.readAsArrayBuffer(file);
-}
-
-// =============================
-// 📤 ORDERS UPLOAD (OPTIONAL)
+// 📤 UPLOAD ORDERS
 // =============================
 
 fileInput.addEventListener('change', handleFile);
 
 function handleFile(e) {
   const file = e.target.files[0];
+  if (!file) return;
+
   const reader = new FileReader();
 
   reader.onload = function (e) {
@@ -113,7 +65,6 @@ function handleFile(e) {
       if (!map.has(id)) {
         map.set(id, {
           id,
-          customer: row['Billing Name'] || 'N/A',
           items: [],
           itemMap: {},
         });
@@ -146,29 +97,30 @@ function handleFile(e) {
 }
 
 // =============================
-// 📊 RENDER PROCUREMENT
+// 📊 MAIN RENDER FUNCTION
 // =============================
 
 function renderProcurement() {
-  // 🚨 if no inventory → stop everything
+  // 🚨 stop if no inventory
   if (Object.keys(inventory).length === 0) {
     orderList.innerHTML = `
-      <div class="order-card">
-        <b style="color:red;">
-          ⚠️ Upload inventory file first
-        </b>
-      </div>
+      <tr>
+        <td colspan="7" style="color:red; text-align:center;">
+          ⚠️ Upload inventory first
+        </td>
+      </tr>
     `;
     return;
   }
 
+  // clear table
   orderList.innerHTML = '';
-
-  const result = {};
 
   // =============================
   // 🔢 GROUP ORDERS
   // =============================
+
+  const result = {};
 
   orders.forEach((order) => {
     order.items.forEach((item) => {
@@ -184,58 +136,157 @@ function renderProcurement() {
   });
 
   // =============================
-  // 🧱 BUILD UI
+  // 🧱 BUILD ROWS
   // =============================
 
+  currentRows = [];
+
   Object.keys(result).forEach((vendor) => {
-    const card = document.createElement('div');
-    card.className = 'order-card';
-
-    let html = `<div><b>${vendor}</b></div>`;
-
     Object.keys(result[vendor]).forEach((item) => {
       const total = result[vendor][item];
       const key = item.toLowerCase().trim();
 
       // match inventory
-      let stock = inventory[key];
+      let invItem = inventory[key];
 
-      // fallback match
-      if (stock === undefined) {
+      if (!invItem) {
         const match = Object.keys(inventory).find(
           (invKey) => invKey.includes(key) || key.includes(invKey),
         );
-
-        if (match) stock = inventory[match];
+        if (match) invItem = inventory[match];
       }
 
-      if (stock === undefined) stock = 0;
+      const stock = invItem?.stock || 0;
+      const vendorName = invItem?.vendor || vendor;
+      const sku = invItem?.sku || '—';
 
       const need = Math.max(0, total - stock);
 
-      // optional: skip items already covered
-      // if (need === 0) return;
+      if (need === 0) return;
 
-      html += `
-        <div class="item-row">
-          <div class="item-name"><b>${item}</b></div>
-
-          <div class="item-meta">
-            <span>Order: ${total}</span>
-            <span>Stock: ${stock}</span>
-            <span class="need">Need: ${need}</span>
-          </div>
-        </div>
-      `;
+      currentRows.push({
+        key,
+        vendor: vendorName,
+        item,
+        sku,
+        total,
+        stock,
+        need,
+      });
     });
-
-    card.innerHTML = html;
-    orderList.appendChild(card);
   });
+
+  // =============================
+  // 🔥 SORT BY PRIORITY
+  // =============================
+
+  currentRows.sort((a, b) => b.need - a.need);
+
+  // =============================
+  // 📭 EMPTY STATE
+  // =============================
+
+  if (currentRows.length === 0) {
+    orderList.innerHTML = `
+      <tr>
+        <td colspan="7" style="text-align:center;">
+          No items need ordering ✅
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  // =============================
+  // 📊 RENDER TABLE
+  // =============================
+
+  currentRows.forEach((r) => {
+    const row = document.createElement('tr');
+
+    const isOrdered = orderedMap[r.key];
+
+    const color = r.need > 10 ? 'red' : r.need > 5 ? 'orange' : 'black';
+
+    row.innerHTML = `
+      <td>
+        <input 
+          type="checkbox"
+          class="ordered-checkbox"
+          data-key="${r.key}"
+          ${isOrdered ? 'checked' : ''}
+        >
+      </td>
+
+      <td>${r.vendor}</td>
+      <td>${r.item}</td>
+      <td>${r.sku}</td>
+      <td>${r.total}</td>
+      <td>${r.stock}</td>
+      <td style="color:${color}; font-weight:bold;">
+        ${r.need}
+      </td>
+    `;
+
+    // ✅ SIMPLE VISUAL FEEDBACK
+    if (isOrdered) {
+      row.style.background = '#f3f3f3';
+    }
+
+    orderList.appendChild(row);
+  });
+
+  // show count
+  inventoryStatus.textContent = `${currentRows.length} items to order`;
 }
 
 // =============================
-// 🚀 INITIAL LOAD
+// ✅ ORDERED TRACKING
+// =============================
+
+orderList.addEventListener('change', (e) => {
+  if (!e.target.classList.contains('ordered-checkbox')) return;
+
+  const key = e.target.dataset.key;
+
+  orderedMap[key] = e.target.checked;
+
+  localStorage.setItem('orderedMap', JSON.stringify(orderedMap));
+
+  renderProcurement();
+});
+
+// =============================
+// 📥 EXPORT
+// =============================
+
+exportBtn.addEventListener('click', () => {
+  if (!currentRows.length) {
+    alert('No data to export');
+    return;
+  }
+
+  const data = currentRows
+    .filter((r) => !orderedMap[r.key]) // only NOT ordered
+    .map((r) => ({
+      Vendor: r.vendor,
+      Item: r.item,
+      SKU: r.sku,
+      'Order Qty': r.total,
+      Stock: r.stock,
+      Need: r.need,
+    }));
+
+  const ws = XLSX.utils.json_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+
+  XLSX.utils.book_append_sheet(wb, ws, 'Procurement');
+
+  XLSX.writeFile(wb, 'procurement_report.xlsx');
+});
+
+// =============================
+// 🚀 INIT
 // =============================
 
 document.addEventListener('DOMContentLoaded', renderProcurement);

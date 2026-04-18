@@ -293,3 +293,22 @@ body {
   color: red;
   font-weight: bold;
 }
+
+/* inventory styling */
+.inventory-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+}
+
+.inventory-table th,
+.inventory-table td {
+  border-bottom: 1px solid #ddd;
+  padding: 10px;
+}
+
+.stock-input,
+.sku-input {
+  width: 100px;
+  padding: 5px;
+}

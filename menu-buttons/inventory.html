@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Inventory</title>
+
+    <link rel="stylesheet" href="../style.css" />
+    <script src="../js-files-for-menu-buttons/inventory.js" defer></script>
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+  </head>
+
+  <body>
+    <a href="../index.html" class="btn btn-cl">⬅ Back</a>
+
+    <div class="container">
+      <h1>📦 Inventory</h1>
+
+      <!-- CONTROLS -->
+      <div class="controls">
+        <input
+          type="text"
+          id="searchInput"
+          class="search"
+          placeholder="🔍 Search item..."
+        />
+
+        <button id="addBtn" class="btn btn-p">➕ Add Item</button>
+        <button id="clearBtn" class="btn btn-cl">🗑️ Clear</button>
+        <label for="inventoryUpload" class="btn btn-p">📦 Upload File</label>
+        <input type="file" id="inventoryUpload" accept=".xlsx, .csv" hidden />
+      </div>
+
+      <!-- TABLE -->
+      <table class="inventory-table">
+        <thead>
+          <tr>
+            <th>Vendor</th>
+            <th>Item</th>
+            <th>SKU (optional)</th>
+            <th>Stock</th>
+          </tr>
+        </thead>
+
+        <tbody id="inventoryTable"></tbody>
+      </table>
+    </div>
+  </body>
+</html>
